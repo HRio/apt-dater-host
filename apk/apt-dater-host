@@ -49,7 +49,7 @@ get_pkg_stat()
 	$APK_CMD version -v | grep -v "^Installed:" > $tmp
 	$APK_CMD info | while read -r pkg
 	do
-		line=$(grep "${pkg}-[0-9]" $tmp)
+		line=$(grep -E "^${pkg}-[0-9]" $tmp)
 		new_ver=$(echo $line | awk '{print $NF}')
 		cur_ver=$(echo $line | awk '{print $1}' | sed "s/$pkg-//")
 		if [ $new_ver = $cur_ver ]; then
@@ -113,6 +113,9 @@ run_as_root()
 	interactive=$1
 	[ $interactive -eq 1 ] && err_str="ERROR:"
 	shift
+
+	proxy="/etc/profile.d/proxy.sh"
+	[ -r $proxy ] && source $proxy
 
 	cmd="$ROOT_CMD $*"
 	$cmd

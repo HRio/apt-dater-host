@@ -1,11 +1,12 @@
 # apt-dater-host sudoers.d config file
 # ------------------------------------
 #
-# Please consider a look at /etc/sudoers.d/README howto enable this file.
-#
 
 # Keep apt-dater's MAINTAINER environment variable
 #Defaults	env_keep += MAINTAINER
+
+# Keep http_proxy environment variable
+#Defaults	env_keep += http_proxy
 
 # Allow members of group adm to execute the apk command
 #%adm		ALL=NOPASSWD: /sbin/apk

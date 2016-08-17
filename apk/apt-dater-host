@@ -42,6 +42,12 @@ get_lsbrel()
 	echo "LSBREL: ${name}|${version}|"
 }
 
+# check if a pkg is held back
+is_held()
+{
+	egrep -q ^$1\= /etc/apk/world
+}
+
 # STATUS: ${Package}|${InstVersion}|${Status}...
 get_pkg_stat()
 {
@@ -54,6 +60,8 @@ get_pkg_stat()
 		cur_ver=$(echo $line | awk '{print $1}' | sed "s/$pkg-//")
 		if [ $new_ver = $cur_ver ]; then
 			echo "STATUS: $pkg|$cur_ver|i"
+		elif is_held $pkg; then
+			echo "STATUS: $pkg|$cur_ver|h"
 		else
 			echo "STATUS: $pkg|$cur_ver|u=$new_ver"
 		fi

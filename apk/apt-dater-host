@@ -28,7 +28,7 @@
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 #
 
-ADP_VERSION="0.7"
+ADP_VERSION="0.6"
 ROOT_CMD="sudo"
 APK_CMD="/sbin/apk"
 
@@ -40,6 +40,12 @@ get_lsbrel()
 	name=$(awk -F= '/^ID/ {print $NF}' /etc/os-release)
 	version=$(awk -F= '/^VERSION_ID/ {print $NF}' /etc/os-release)
 	echo "LSBREL: ${name}|${version}|"
+}
+
+# PRL: ${URI}
+get_prl()
+{
+	sed -n 's/^http/PRL: http/p' /etc/apk/repositories
 }
 
 # check if a pkg is held back
@@ -108,6 +114,7 @@ say_hi()
 do_status()
 {
 	get_lsbrel
+	get_prl
 	get_virt
 	get_uname
 	check_forbid

@@ -3,7 +3,7 @@
 # apt-dater - terminal-based remote package update manager
 #
 # Implementation of the protocol described in
-#   https://github.com/DE-IBH/apt-dater-host/blob/master/doc/ADP-0.7
+#   https://github.com/DE-IBH/apt-dater-host/blob/master/doc/ADP-0.6
 # using Busybox ash, awk and sed for use with Alpine Linux
 #
 # Author:
@@ -95,8 +95,24 @@ get_uname()
 # KERNELINFO: ${Code} ${Release}
 get_kern()
 {
+	# 0 - latest running
+	# 1 - reboot
 	# 9 - Unknown
-	echo "KERNELINFO: 9 $(uname -r)"
+	running=$(uname -r)
+	flavour=$(uname -r | awk -F- '{print $NF}')
+	vmlinuz="/boot/vmlinuz-$flavour"
+	if [ -r $vmlinuz ]; then
+		installed=$($APK_CMD info --who-owns $vmlinuz | egrep -o "[0-9]+.[0-9]+.[0-9]+-r[0-9]")
+		with_r=$(echo $running | sed -e "s/[0-9]-${flavour}$/r&/g" | sed "s/-${flavour}//")
+		if [ x"$($APK_CMD version -t $with_r $installed)" = x'=' ]; then
+			echo "KERNELINFO: 0 $running"
+		else
+			echo "KERNELINFO: 1 $running"
+		fi
+	else
+		echo "KERNELINFO: 9 $running"
+	fi
+
 }
 
 # FORBID: ${Operations}

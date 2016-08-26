@@ -32,7 +32,7 @@ ADP_VERSION="0.6"
 ROOT_CMD="sudo"
 APK_CMD="/sbin/apk"
 
-err=255 # exit code returned by perl from die()
+err=255 # exit code returned by Perl from die()
 
 # LSBREL: ${Distri}|{Version}|${Codename}
 get_lsbrel()
@@ -54,6 +54,14 @@ is_held()
 	egrep -q ^$1\= /etc/apk/world
 }
 
+# check if $1 > $2
+newer_then()
+{
+	[ x"$($APK_CMD version -t $1 $2)" = x">" ] && return 0
+
+	return 1
+}
+
 # STATUS: ${Package}|${InstVersion}|${Status}...
 get_pkg_stat()
 {
@@ -64,12 +72,19 @@ get_pkg_stat()
 		line=$(grep -E "^${pkg}-[0-9]" $tmp)
 		new_ver=$(echo $line | awk '{print $NF}')
 		cur_ver=$(echo $line | awk '{print $1}' | sed "s/$pkg-//")
-		if [ $new_ver = $cur_ver ]; then
+		if [ x"$new_ver" = x"$cur_ver" ]; then
 			echo "STATUS: $pkg|$cur_ver|i"
 		elif is_held $pkg; then
 			echo "STATUS: $pkg|$cur_ver|h"
-		else
+		elif [ x"$new_ver" = x"?" ]; then
+			echo "STATUS: $pkg|$cur_ver|x"
+		elif newer_then $new_ver $cur_ver; then
 			echo "STATUS: $pkg|$cur_ver|u=$new_ver"
+		else
+			# newer installed ($cur_ver) than available,
+			# ADP 0.6 does not describe this case
+			# x should be suitable for now.
+			echo "STATUS: $pkg|$cur_ver|x"
 		fi
 	done
 	rm $tmp
@@ -99,11 +114,11 @@ get_kern()
 	# 1 - reboot
 	# 9 - Unknown
 	running=$(uname -r)
-	flavour=$(uname -r | awk -F- '{print $NF}')
-	vmlinuz="/boot/vmlinuz-$flavour"
+	flavor=$(uname -r | awk -F- '{print $NF}')
+	vmlinuz="/boot/vmlinuz-$flavor"
 	if [ -r $vmlinuz ]; then
 		installed=$($APK_CMD info --who-owns $vmlinuz | egrep -o "[0-9]+.[0-9]+.[0-9]+-r[0-9]")
-		with_r=$(echo $running | sed -e "s/[0-9]-${flavour}$/r&/g" | sed "s/-${flavour}//")
+		with_r=$(echo $running | sed -e "s/[0-9]-${flavor}$/r&/g" | sed "s/-${flavor}//")
 		if [ x"$($APK_CMD version -t $with_r $installed)" = x'=' ]; then
 			echo "KERNELINFO: 0 $running"
 		else
